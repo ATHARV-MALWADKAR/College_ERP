@@ -10,11 +10,10 @@ from fastapi import Request
 from fastapi import Form
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
-
 from app.core.config import settings
 from app.core.deps import CurrentUser, RequireAdmin, RequireFaculty, RequireStudent
+from app.core.logging import configure_logging
+from app.core.middleware import ErrorHandlerMiddleware, RateLimitMiddleware, SecureHeadersMiddleware
 from app.crud import attendance as attendance_crud
 from app.crud import student as student_crud
 from sqlalchemy.orm import Session
@@ -28,6 +27,10 @@ from app.api.v1.routes_results import router as results_router
 from app.api.v1.routes_notices import router as notices_router
 from app.api.v1.routes_timetable import router as timetable_router
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
+
+configure_logging()
 
 app = FastAPI(
     title="College ERP API",
@@ -36,6 +39,10 @@ app = FastAPI(
 )
 
 Base.metadata.create_all(bind=engine)
+
+app.add_middleware(ErrorHandlerMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=200, window_seconds=60)
+app.add_middleware(SecureHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
