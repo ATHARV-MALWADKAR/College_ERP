@@ -1,22 +1,140 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
 {% block title %}Student Dashboard · College ERP{% endblock %}
 {% block page_title %}Student Dashboard{% endblock %}
-{% block page_subtitle %}Your attendance, assignments, and timetable at a glance.{% endblock %}
+
+{% block sidebar_links %}
+<a href="/student" class="flex items-center px-4 py-3 text-white bg-gray-700 rounded-lg">
+    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
+    Dashboard
+</a>
+<a href="/assignments" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg">
+    <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
+    Assignments
+</a>
+<a href="/attendance" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg">
+    <i data-lucide="calendar" class="w-5 h-5 mr-3"></i>
+    Attendance
+</a>
+<a href="/results" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg">
+    <i data-lucide="award" class="w-5 h-5 mr-3"></i>
+    Results
+</a>
+<a href="/timetable" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg">
+    <i data-lucide="clock" class="w-5 h-5 mr-3"></i>
+    Timetable
+</a>
+<a href="/notices" class="flex items-center px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg">
+    <i data-lucide="bell" class="w-5 h-5 mr-3"></i>
+    Notices
+</a>
+{% endblock %}
 
 {% block content %}
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
-    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Attendance</div>
-    <div class="mt-2 text-3xl font-semibold">85%</div>
+  <div class="card rounded-2xl p-6 shadow-soft">
+    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Attendance Rate</div>
+    <div class="mt-2 text-3xl font-semibold" id="attendanceRate">0%</div>
   </div>
-  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+  <div class="card rounded-2xl p-6 shadow-soft">
     <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Assignments Due</div>
-    <div class="mt-2 text-3xl font-semibold">3</div>
+    <div class="mt-2 text-3xl font-semibold" id="assignmentsDue">0</div>
   </div>
-  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+  <div class="card rounded-2xl p-6 shadow-soft">
     <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Next Lecture</div>
-    <div class="mt-2 text-lg font-semibold">DBMS · 11:00 AM</div>
+    <div class="mt-2 text-lg font-semibold" id="nextLecture">No upcoming classes</div>
   </div>
 </div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
+  <div class="card rounded-2xl p-6 shadow-soft">
+    <h3 class="text-lg font-semibold mb-4">Today's Schedule</h3>
+    <div id="todaysSchedule" class="space-y-3">
+      <p class="text-slate-500 dark:text-slate-400">Loading schedule...</p>
+    </div>
+  </div>
+
+  <div class="card rounded-2xl p-6 shadow-soft">
+    <h3 class="text-lg font-semibold mb-4">Pending Assignments</h3>
+    <div id="pendingAssignments" class="space-y-3">
+      <p class="text-slate-500 dark:text-slate-400">Loading assignments...</p>
+    </div>
+  </div>
+</div>
+
+<div class="card rounded-2xl p-6 shadow-soft mt-6">
+  <h3 class="text-lg font-semibold mb-4">Recent Notices</h3>
+  <div id="recentNotices" class="space-y-3">
+    <p class="text-slate-500 dark:text-slate-400">Loading notices...</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function loadStudentStats() {
+    try {
+      const response = await fetch('/api/v1/students/dashboard');
+      const data = await response.json();
+
+      document.getElementById('attendanceRate').textContent = `${data.attendance_rate.toFixed(1)}%`;
+      document.getElementById('assignmentsDue').textContent = data.assignments_due;
+
+      // Update next lecture
+      if (data.next_lecture) {
+        document.getElementById('nextLecture').textContent = `${data.next_lecture.subject_name} · ${data.next_lecture.start_time}`;
+      }
+
+      // Update today's schedule
+      const scheduleContainer = document.getElementById('todaysSchedule');
+      if (data.todays_schedule.length > 0) {
+        scheduleContainer.innerHTML = data.todays_schedule.map(cls => `
+          <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+            <div>
+              <div class="font-medium">${cls.subject_name}</div>
+              <div class="text-sm text-slate-500 dark:text-slate-400">${cls.start_time} - ${cls.end_time}</div>
+            </div>
+            <div class="text-sm text-slate-600 dark:text-slate-300">${cls.room} • ${cls.faculty_name}</div>
+          </div>
+        `).join('');
+      } else {
+        scheduleContainer.innerHTML = '<p class="text-slate-500 dark:text-slate-400">No classes scheduled for today</p>';
+      }
+
+      // Update pending assignments
+      const assignmentsContainer = document.getElementById('pendingAssignments');
+      if (data.pending_assignments.length > 0) {
+        assignmentsContainer.innerHTML = data.pending_assignments.map(assignment => `
+          <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+            <div>
+              <div class="font-medium">${assignment.title}</div>
+              <div class="text-sm text-slate-500 dark:text-slate-400">${assignment.subject_name} • Due: ${assignment.due_date}</div>
+            </div>
+            <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full">Due Soon</span>
+          </div>
+        `).join('');
+      } else {
+        assignmentsContainer.innerHTML = '<p class="text-slate-500 dark:text-slate-400">No pending assignments</p>';
+      }
+
+      // Update recent notices
+      const noticesContainer = document.getElementById('recentNotices');
+      if (data.recent_notices.length > 0) {
+        noticesContainer.innerHTML = data.recent_notices.map(notice => `
+          <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+            <div class="font-medium">${notice.title}</div>
+            <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">${notice.content.substring(0, 100)}...</div>
+            <div class="text-xs text-slate-400 dark:text-slate-500 mt-2">${notice.created_at}</div>
+          </div>
+        `).join('');
+      } else {
+        noticesContainer.innerHTML = '<p class="text-slate-500 dark:text-slate-400">No recent notices</p>';
+      }
+    } catch (error) {
+      console.error('Failed to load student stats:', error);
+    }
+  }
+
+  loadStudentStats();
+</script>
 {% endblock %}

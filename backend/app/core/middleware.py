@@ -58,3 +58,22 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 status_code=HTTP_500_INTERNAL_SERVER_ERROR,
                 content={"detail": "Internal server error"},
             )
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, exclude_paths=None):
+        super().__init__(app)
+        self.exclude_paths = exclude_paths or ["/login", "/api/v1/auth/login", "/health"]
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        if request.url.path in self.exclude_paths or request.url.path.startswith("/static"):
+            return await call_next(request)
+
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            # Redirect to login for HTML pages
+            if request.headers.get("accept", "").startswith("text/html"):
+                return RedirectResponse(url="/login", status_code=302)
+            return Response(status_code=401, content="Unauthorized")
+
+        return await call_next(request)

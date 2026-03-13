@@ -13,7 +13,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.core.deps import CurrentUser, RequireAdmin, RequireFaculty, RequireStudent
 from app.core.logging import configure_logging
-from app.core.middleware import ErrorHandlerMiddleware, RateLimitMiddleware, SecureHeadersMiddleware
+from app.core.middleware import AuthMiddleware, ErrorHandlerMiddleware, RateLimitMiddleware, SecureHeadersMiddleware
 from app.crud import attendance as attendance_crud
 from app.crud import student as student_crud
 from sqlalchemy.orm import Session
@@ -43,6 +43,7 @@ Base.metadata.create_all(bind=engine)
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(RateLimitMiddleware, max_requests=200, window_seconds=60)
 app.add_middleware(SecureHeadersMiddleware)
+app.add_middleware(AuthMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,6 +72,16 @@ app.include_router(notices_router, prefix=api_prefix, tags=["notices"])
 app.include_router(timetable_router, prefix=api_prefix, tags=["timetable"])
 
 
+# ------------------ Login UI Route ------------------
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request}
+    )
+
+
 # ------------------ Dashboard UI Route ------------------
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -87,7 +98,7 @@ async def admin_dashboard(
 ):
     return templates.TemplateResponse(
         "admin_dashboard.html",
-        {"request": request}
+        {"request": request, "current_user": current_user}
     )
 
 
@@ -98,7 +109,7 @@ async def faculty_dashboard(
 ):
     return templates.TemplateResponse(
         "faculty_dashboard.html",
-        {"request": request}
+        {"request": request, "current_user": current_user}
     )
 
 
@@ -109,7 +120,7 @@ async def student_dashboard(
 ):
     return templates.TemplateResponse(
         "student_dashboard.html",
-        {"request": request}
+        {"request": request, "current_user": current_user}
     )
 
     

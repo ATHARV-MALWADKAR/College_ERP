@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import RequireFaculty
 from app.db.session import get_db
+from app.services.dashboard import get_faculty_dashboard_data
 
 
 router = APIRouter()
@@ -13,10 +14,5 @@ def get_faculty_dashboard(
     current_user: RequireFaculty,
     db: Session = Depends(get_db),
 ) -> dict:
-    return {
-        "summary": {
-            "today_classes": 0,
-            "pending_evaluations": 0,
-        }
-    }
+    return get_faculty_dashboard_data(db, current_user.id)
 
