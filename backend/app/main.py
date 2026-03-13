@@ -122,3 +122,11 @@ async def add_student(
     })
 
     return {"message": "Student added"}
+
+@app.get("/attendance", response_class=HTMLResponse)
+async def attendance_page(request: Request):
+
+    return templates.TemplateResponse(
+        "attendance.html",
+        {"request": request}
+    )
