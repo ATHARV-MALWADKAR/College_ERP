@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 from typing import Callable
 
+from fastapi.responses import RedirectResponse
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -13,12 +14,14 @@ class SecureHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
+
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         response.headers["Strict-Transport-Security"] = f"max-age={self.hsts_seconds}; includeSubDomains"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+
         return response
 
 
@@ -32,16 +35,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         ip = request.client.host if request.client else "unknown"
         now = time.time()
+
         queue = self._requests[ip]
-        # remove expired timestamps
+
         while queue and queue[0] + self.window_seconds < now:
             queue.pop(0)
+
         if len(queue) >= self.max_requests:
             return Response(
                 status_code=429,
-                content="Rate limit exceeded. Try again later.",
+                content="Rate limit exceeded. Try again later."
             )
+
         queue.append(now)
+
         return await call_next(request)
 
 
@@ -49,8 +56,8 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         try:
             return await call_next(request)
-        except Exception as exc:
-            # Keep internal details out of the response
+
+        except Exception:
             from fastapi.responses import JSONResponse
             from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
@@ -61,19 +68,43 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, exclude_paths=None):
+
+    def __init__(self, app):
         super().__init__(app)
-        self.exclude_paths = exclude_paths or ["/login", "/api/v1/auth/login", "/health"]
+
+        # Public routes that do not require authentication
+        self.public_paths = [
+            "/login",
+            "/health",
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+            "/api/v1/auth/login",
+            "/api/v1/auth/login/json",
+            "/api/v1/auth/register"
+        ]
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        if request.url.path in self.exclude_paths or request.url.path.startswith("/static"):
+
+        path = request.url.path
+
+        # Allow static files
+        if path.startswith("/static"):
             return await call_next(request)
 
+        # Allow public routes
+        for public in self.public_paths:
+            if path.startswith(public):
+                return await call_next(request)
+
         auth_header = request.headers.get("Authorization")
+
         if not auth_header or not auth_header.startswith("Bearer "):
-            # Redirect to login for HTML pages
-            if request.headers.get("accept", "").startswith("text/html"):
+
+            # If browser request → redirect to login
+            if "text/html" in request.headers.get("accept", ""):
                 return RedirectResponse(url="/login", status_code=302)
+
             return Response(status_code=401, content="Unauthorized")
 
         return await call_next(request)
