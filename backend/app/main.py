@@ -259,3 +259,18 @@ async def notices_page(request: Request):
 @app.get("/timetable", response_class=HTMLResponse)
 async def timetable_page(request: Request):
     return templates.TemplateResponse("timetable.html", {"request": request})
+
+
+@app.get("/assignments", response_class=HTMLResponse)
+async def assignments_page(request: Request):
+    return templates.TemplateResponse("assignments.html", {"request": request})
+
+
+@app.get("/assignments/{assignment_id}", response_class=HTMLResponse)
+async def assignment_details_page(request: Request, assignment_id: int):
+    return templates.TemplateResponse("assignment_details.html", {"request": request, "assignment_id": assignment_id})
+
+
+@app.get("/submissions/{submission_id}", response_class=HTMLResponse)
+async def submission_page(request: Request, submission_id: int):
+    return templates.TemplateResponse("submission.html", {"request": request, "submission_id": submission_id})
