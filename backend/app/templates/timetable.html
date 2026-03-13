@@ -5,10 +5,95 @@
 {% block page_subtitle %}Plan and view schedules by course and faculty.{% endblock %}
 
 {% block content %}
-<div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
-  <div class="text-sm font-semibold">Timetable</div>
-  <div class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-    This module page is ready to be populated with weekly schedules and filters.
+<div class="space-y-6">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-sm font-semibold">Weekly Timetable</div>
+        <div class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          Your upcoming classes are shown below.
+        </div>
+      </div>
+      <button id="refreshBtn" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+        Refresh
+      </button>
+    </div>
+
+    <div id="timetableContainer" class="mt-6">
+      <div class="text-center text-slate-500 dark:text-slate-400 py-8" id="timetableLoading">
+        Loading timetable...
+      </div>
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function loadTimetable() {
+    const container = document.getElementById('timetableContainer');
+    container.innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8" id="timetableLoading">Loading timetable...</div>';
+
+    try {
+      const response = await fetch('/api/v1/timetable');
+      if (!response.ok) throw new Error('Failed to load timetable');
+      const entries = await response.json();
+
+      if (!entries || entries.length === 0) {
+        container.innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">No timetable entries found.</div>';
+        return;
+      }
+
+      const dayNames = [null, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      const rows = entries.map(entry => `
+        <tr class="border-t border-slate-200 dark:border-slate-800">
+          <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">${dayNames[entry.day_of_week] || entry.day_of_week}</td>
+          <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">${entry.start_time} - ${entry.end_time}</td>
+          <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">Course ${entry.course_id}</td>
+          <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">Subject ${entry.subject_id}</td>
+          <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">Faculty ${entry.faculty_id}</td>
+          <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">${entry.room || '-'}</td>
+        </tr>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+            <thead class="bg-slate-50 dark:bg-slate-900">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Day
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Time
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Course
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Subject
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Faculty
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Room
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } catch (error) {
+      console.error(error);
+      container.innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">Failed to load timetable</div>';
+    }
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', loadTimetable);
+  loadTimetable();
+</script>
 {% endblock %}

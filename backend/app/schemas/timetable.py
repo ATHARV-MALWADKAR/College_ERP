@@ -4,12 +4,14 @@ from pydantic import BaseModel
 
 
 class TimetableEntryBase(BaseModel):
-    day_of_week: str
+    course_id: int
+    subject_id: int
+    faculty_id: int
+    day_of_week: int  # 1=Monday, 7=Sunday
     start_time: time
     end_time: time
-    course_code: str
     room: str | None = None
-    faculty_id: int
+    academic_year: str | None = None
 
 
 class TimetableEntryCreate(TimetableEntryBase):
