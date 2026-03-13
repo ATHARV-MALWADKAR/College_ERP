@@ -1,66 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>College ERP</title>
+{% extends "base.html" %}
 
-<script src="https://cdn.tailwindcss.com"></script>
+{% block title %}Dashboard · College ERP{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Overview of your ERP at a glance.{% endblock %}
 
-</head>
-
-<body class="bg-gray-100">
-
-<div class="flex">
-
-<!-- Sidebar -->
-<div class="w-64 bg-gray-900 text-white min-h-screen">
-
-<div class="p-6 text-2xl font-bold border-b border-gray-700">
-College ERP
+{% block content %}
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Students</div>
+    <div class="mt-2 text-3xl font-semibold">120</div>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Faculty</div>
+    <div class="mt-2 text-3xl font-semibold">24</div>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Assignments Pending</div>
+    <div class="mt-2 text-3xl font-semibold">5</div>
+  </div>
 </div>
-
-<nav class="p-4 space-y-2">
-
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Dashboard</a>
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Students</a>
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Faculty</a>
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Attendance</a>
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Assignments</a>
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Results</a>
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Notices</a>
-<a href="#" class="block p-2 rounded hover:bg-gray-700">Timetable</a>
-
-</nav>
-
-</div>
-
-
-<!-- Main content -->
-<div class="flex-1 p-10">
-
-<h1 class="text-3xl font-bold mb-6">Admin Dashboard</h1>
-
-<div class="grid grid-cols-3 gap-6">
-
-<div class="bg-white p-6 rounded-xl shadow">
-<h2 class="text-gray-500">Total Students</h2>
-<p class="text-3xl font-bold mt-2">120</p>
-</div>
-
-<div class="bg-white p-6 rounded-xl shadow">
-<h2 class="text-gray-500">Total Faculty</h2>
-<p class="text-3xl font-bold mt-2">24</p>
-</div>
-
-<div class="bg-white p-6 rounded-xl shadow">
-<h2 class="text-gray-500">Assignments Pending</h2>
-<p class="text-3xl font-bold mt-2">5</p>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</body>
-</html>
+{% endblock %}

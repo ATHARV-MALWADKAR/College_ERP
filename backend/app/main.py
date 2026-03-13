@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from datetime import date
+
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.base import Base
-from app.db.session import engine
-from fastapi.responses import HTMLResponse
+from app.db.session import engine, get_db
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi import Form
@@ -12,6 +14,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
 
 from app.core.config import settings
+from app.core.deps import CurrentUser, RequireAdmin, RequireFaculty, RequireStudent
+from app.crud import attendance as attendance_crud
+from app.crud import student as student_crud
+from sqlalchemy.orm import Session
 from app.api.v1.routes_auth import router as auth_router
 from app.api.v1.routes_students import router as students_router
 from app.api.v1.routes_faculty import router as faculty_router
@@ -28,9 +34,6 @@ app = FastAPI(
     version="0.1.0",
     description="Backend API for the College ERP system.",
 )
-
-# GLOBAL STORAGE
-students_data = []
 
 Base.metadata.create_all(bind=engine)
 
@@ -71,23 +74,32 @@ async def dashboard(request: Request):
     )
 
 @app.get("/admin", response_class=HTMLResponse)
-async def admin_dashboard(request: Request):
+async def admin_dashboard(
+    request: Request,
+    current_user: RequireAdmin,
+):
     return templates.TemplateResponse(
         "admin_dashboard.html",
         {"request": request}
     )
 
 
-@app.get("/faculty")
-async def faculty_dashboard(request: Request):
+@app.get("/faculty", response_class=HTMLResponse)
+async def faculty_dashboard(
+    request: Request,
+    current_user: RequireFaculty,
+):
     return templates.TemplateResponse(
         "faculty_dashboard.html",
         {"request": request}
     )
 
 
-@app.get("/student")
-async def student_dashboard(request: Request):
+@app.get("/student", response_class=HTMLResponse)
+async def student_dashboard(
+    request: Request,
+    current_user: RequireStudent,
+):
     return templates.TemplateResponse(
         "student_dashboard.html",
         {"request": request}
@@ -97,36 +109,153 @@ async def student_dashboard(request: Request):
 
 
 @app.get("/students", response_class=HTMLResponse)
-async def students_page(request: Request):
-
+async def students_page(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    students = student_crud.list_students(db)
     return templates.TemplateResponse(
         "students.html",
         {
             "request": request,
-            "students": students_data
-        }
+            "students": students,
+        },
     )
 
 
 @app.post("/students/add")
 async def add_student(
-    name: str = Form(...),
-    email: str = Form(...),
-    department: str = Form(...)
+    request: Request,
+    user_id: int = Form(...),
+    roll_number: str = Form(...),
+    department_id: int = Form(...),
+    course_id: int = Form(...),
+    batch: str = Form(...),
+    db: Session = Depends(get_db),
 ):
+    try:
+        student_crud.create_student(
+            db,
+            user_id=user_id,
+            roll_number=roll_number,
+            department_id=department_id,
+            course_id=course_id,
+            batch=batch,
+        )
+    except Exception as exc:  # simple catch; can be refined
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not create student: {exc}",
+        ) from exc
 
-    students_data.append({
-        "name": name,
-        "email": email,
-        "department": department
-    })
+    return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
 
-    return {"message": "Student added"}
+
+@app.post("/students/{student_id}/delete")
+async def delete_student(
+    student_id: int,
+    db: Session = Depends(get_db),
+):
+    success = student_crud.delete_student(db, student_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found",
+        )
+    return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/attendance", response_class=HTMLResponse)
-async def attendance_page(request: Request):
+async def attendance_page(
+    request: Request,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    role = current_user.role.name if current_user.role else None
+
+    student_summary = None
+    if role == "student" and current_user.student_profile:
+        student_summary = attendance_crud.get_student_attendance_summary(
+            db, student_id=current_user.student_profile.id
+        )
+
+    report = None
+    if role == "admin":
+        report = attendance_crud.get_attendance_report(db)
 
     return templates.TemplateResponse(
         "attendance.html",
-        {"request": request}
+        {
+            "request": request,
+            "current_role": role,
+            "student_summary": student_summary,
+            "attendance_report": report,
+        },
     )
+
+
+@app.post("/attendance/mark")
+async def mark_attendance(
+    current_user: RequireFaculty,
+    student_id: int = Form(...),
+    subject_id: int = Form(...),
+    status_value: str = Form(..., alias="status"),
+    date_value: date = Form(default_factory=date.today, alias="date"),
+    db: Session = Depends(get_db),
+):
+    if status_value not in {"present", "absent"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid status; must be 'present' or 'absent'",
+        )
+
+    attendance_crud.mark_attendance(
+        db,
+        student_id=student_id,
+        subject_id=subject_id,
+        date=date_value,
+        status=status_value,
+    )
+    return RedirectResponse(url="/attendance", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.get("/attendance/report", response_class=HTMLResponse)
+async def attendance_report(
+    request: Request,
+    current_user: RequireAdmin,
+    db: Session = Depends(get_db),
+):
+    report = attendance_crud.get_attendance_report(db)
+    return templates.TemplateResponse(
+        "attendance.html",
+        {
+            "request": request,
+            "current_role": current_user.role.name if current_user.role else None,
+            "student_summary": None,
+            "attendance_report": report,
+        },
+    )
+
+
+@app.get("/faculty-module", response_class=HTMLResponse)
+async def faculty_page(request: Request):
+    return templates.TemplateResponse("faculty.html", {"request": request})
+
+
+@app.get("/assignments", response_class=HTMLResponse)
+async def assignments_page(request: Request):
+    return templates.TemplateResponse("assignments.html", {"request": request})
+
+
+@app.get("/results", response_class=HTMLResponse)
+async def results_page(request: Request):
+    return templates.TemplateResponse("results.html", {"request": request})
+
+
+@app.get("/notices", response_class=HTMLResponse)
+async def notices_page(request: Request):
+    return templates.TemplateResponse("notices.html", {"request": request})
+
+
+@app.get("/timetable", response_class=HTMLResponse)
+async def timetable_page(request: Request):
+    return templates.TemplateResponse("timetable.html", {"request": request})

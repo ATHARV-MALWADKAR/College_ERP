@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}College ERP{% endblock %}</title>
+
+    <!-- Prevent theme flash: set class before Tailwind loads -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme = stored || (prefersDark ? "dark" : "light");
+          if (theme === "dark") document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Tailwind via CDN (dark mode via class) -->
+    <script>
+      window.tailwind = {
+        config: {
+          darkMode: "class",
+          theme: {
+            extend: {
+              boxShadow: {
+                soft: "0 10px 25px -15px rgba(0,0,0,0.25)",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    {% block extra_head %}{% endblock %}
+  </head>
+
+  <body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    {% set path = request.url.path if request and request.url else '' %}
+    {% macro nav_link(label, href) -%}
+      {% set active = (path == href) %}
+      <a
+        href="{{ href }}"
+        class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition
+               {{ 'bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-50' if active else 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-50' }}"
+      >
+        <span class="h-2 w-2 rounded-full {{ 'bg-indigo-600' if active else 'bg-slate-300 dark:bg-slate-700 group-hover:bg-indigo-500' }}"></span>
+        <span>{{ label }}</span>
+      </a>
+    {%- endmacro %}
+
+    <!-- Mobile sidebar backdrop -->
+    <div id="mobileBackdrop" class="fixed inset-0 z-40 hidden bg-black/50" aria-hidden="true"></div>
+
+    <!-- Layout wrapper -->
+    <div class="min-h-full">
+      <!-- Sidebar (desktop) -->
+      <aside class="fixed inset-y-0 left-0 z-50 hidden w-72 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:block">
+        <div class="flex h-16 items-center justify-between px-6">
+          <a href="/dashboard" class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-indigo-600"></div>
+            <div class="leading-tight">
+              <div class="text-sm font-semibold">College ERP</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Dashboard</div>
+            </div>
+          </a>
+        </div>
+
+        <nav class="px-4 pb-6 pt-2">
+          <div class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Navigation
+          </div>
+          <div class="space-y-1">
+            {{ nav_link('Dashboard', '/dashboard') }}
+            {{ nav_link('Students', '/students') }}
+            {{ nav_link('Faculty', '/faculty') }}
+            {{ nav_link('Attendance', '/attendance') }}
+            {{ nav_link('Assignments', '/assignments') }}
+            {{ nav_link('Results', '/results') }}
+            {{ nav_link('Notices', '/notices') }}
+            {{ nav_link('Timetable', '/timetable') }}
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Sidebar (mobile) -->
+      <aside
+        id="mobileSidebar"
+        class="fixed inset-y-0 left-0 z-50 hidden w-72 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950 lg:hidden"
+        aria-label="Mobile Sidebar"
+      >
+        <div class="flex h-16 items-center justify-between px-6">
+          <a href="/dashboard" class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-indigo-600"></div>
+            <div class="text-sm font-semibold">College ERP</div>
+          </a>
+          <button
+            type="button"
+            class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
+            onclick="closeMobileSidebar()"
+            aria-label="Close menu"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6 6 18"></path>
+              <path d="M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <nav class="px-4 pb-6 pt-2">
+          <div class="space-y-1">
+            {{ nav_link('Dashboard', '/dashboard') }}
+            {{ nav_link('Students', '/students') }}
+            {{ nav_link('Faculty', '/faculty') }}
+            {{ nav_link('Attendance', '/attendance') }}
+            {{ nav_link('Assignments', '/assignments') }}
+            {{ nav_link('Results', '/results') }}
+            {{ nav_link('Notices', '/notices') }}
+            {{ nav_link('Timetable', '/timetable') }}
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main column -->
+      <div class="lg:pl-72">
+        <!-- Top navbar -->
+        <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+          <div class="flex h-16 items-center gap-3 px-4 lg:px-8">
+            <!-- Mobile menu button -->
+            <button
+              type="button"
+              class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900 lg:hidden"
+              onclick="openMobileSidebar()"
+              aria-label="Open menu"
+            >
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h16"></path>
+                <path d="M4 12h16"></path>
+                <path d="M4 18h16"></path>
+              </svg>
+            </button>
+
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-sm font-semibold">
+                {% block page_title %}Dashboard{% endblock %}
+              </div>
+              <div class="truncate text-xs text-slate-500 dark:text-slate-400">
+                {% block page_subtitle %}Welcome back.{% endblock %}
+              </div>
+            </div>
+
+            <!-- Theme toggle -->
+            <button
+              id="themeToggle"
+              type="button"
+              class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
+              aria-label="Toggle theme"
+              onclick="toggleTheme()"
+            >
+              <svg id="iconSun" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 20v2"></path>
+                <path d="m4.93 4.93 1.41 1.41"></path>
+                <path d="m17.66 17.66 1.41 1.41"></path>
+                <path d="M2 12h2"></path>
+                <path d="M20 12h2"></path>
+                <path d="m6.34 17.66-1.41 1.41"></path>
+                <path d="m19.07 4.93-1.41 1.41"></path>
+              </svg>
+              <svg id="iconMoon" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"></path>
+              </svg>
+            </button>
+
+            <!-- Notifications -->
+            <button
+              type="button"
+              class="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
+              aria-label="Notifications"
+            >
+              <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500"></span>
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </button>
+
+            <!-- User dropdown -->
+            <div class="relative">
+              <button
+                type="button"
+                class="flex items-center gap-2 rounded-lg p-1.5 hover:bg-slate-100 dark:hover:bg-slate-900"
+                onclick="toggleUserMenu()"
+                aria-label="User menu"
+              >
+                <div class="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500"></div>
+                <div class="hidden text-left sm:block">
+                  <div class="text-sm font-semibold leading-4">User</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400">Account</div>
+                </div>
+                <svg class="hidden h-4 w-4 text-slate-500 dark:text-slate-400 sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </button>
+
+              <div
+                id="userMenu"
+                class="absolute right-0 mt-2 hidden w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-soft dark:border-slate-800 dark:bg-slate-950"
+              >
+                <a href="/auth/me" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900">
+                  Profile
+                </a>
+                <a href="#" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900">
+                  Settings
+                </a>
+                <div class="my-2 h-px bg-slate-200 dark:bg-slate-800"></div>
+                <a href="#" class="block rounded-lg px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40">
+                  Logout
+                </a>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Page content -->
+        <main class="px-4 py-6 lg:px-8">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+
+    <script>
+      function syncThemeIcon() {
+        var isDark = document.documentElement.classList.contains("dark");
+        var sun = document.getElementById("iconSun");
+        var moon = document.getElementById("iconMoon");
+        if (!sun || !moon) return;
+        if (isDark) {
+          sun.classList.remove("hidden");
+          moon.classList.add("hidden");
+        } else {
+          sun.classList.add("hidden");
+          moon.classList.remove("hidden");
+        }
+      }
+
+      function setTheme(theme) {
+        if (theme === "dark") document.documentElement.classList.add("dark");
+        else document.documentElement.classList.remove("dark");
+        try {
+          localStorage.setItem("theme", theme);
+        } catch (e) {}
+        syncThemeIcon();
+      }
+
+      function toggleTheme() {
+        var isDark = document.documentElement.classList.contains("dark");
+        setTheme(isDark ? "light" : "dark");
+      }
+
+      function openMobileSidebar() {
+        var sidebar = document.getElementById("mobileSidebar");
+        var backdrop = document.getElementById("mobileBackdrop");
+        if (sidebar) sidebar.classList.remove("hidden");
+        if (backdrop) backdrop.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+      }
+
+      function closeMobileSidebar() {
+        var sidebar = document.getElementById("mobileSidebar");
+        var backdrop = document.getElementById("mobileBackdrop");
+        if (sidebar) sidebar.classList.add("hidden");
+        if (backdrop) backdrop.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+      }
+
+      function toggleUserMenu() {
+        var menu = document.getElementById("userMenu");
+        if (!menu) return;
+        menu.classList.toggle("hidden");
+      }
+
+      document.addEventListener("click", function (e) {
+        var menu = document.getElementById("userMenu");
+        if (!menu) return;
+        var button = menu.previousElementSibling;
+        if (menu.classList.contains("hidden")) return;
+        if (menu.contains(e.target) || (button && button.contains(e.target))) return;
+        menu.classList.add("hidden");
+      });
+
+      var backdrop = document.getElementById("mobileBackdrop");
+      if (backdrop) backdrop.addEventListener("click", closeMobileSidebar);
+      syncThemeIcon();
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+  </body>
+</html>
+

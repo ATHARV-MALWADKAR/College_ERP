@@ -1,36 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Student Dashboard</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
+{% extends "base.html" %}
 
-<body class="bg-gray-100">
+{% block title %}Student Dashboard · College ERP{% endblock %}
+{% block page_title %}Student Dashboard{% endblock %}
+{% block page_subtitle %}Your attendance, assignments, and timetable at a glance.{% endblock %}
 
-<div class="p-10">
-
-<h1 class="text-3xl font-bold">Student Dashboard</h1>
-
-<div class="grid grid-cols-3 gap-6 mt-6">
-
-<div class="bg-white p-6 rounded shadow">
-<h2 class="text-gray-500">Attendance</h2>
-<p class="text-3xl font-bold">85%</p>
+{% block content %}
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Attendance</div>
+    <div class="mt-2 text-3xl font-semibold">85%</div>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Assignments Due</div>
+    <div class="mt-2 text-3xl font-semibold">3</div>
+  </div>
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-800 dark:bg-slate-950">
+    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Next Lecture</div>
+    <div class="mt-2 text-lg font-semibold">DBMS · 11:00 AM</div>
+  </div>
 </div>
-
-<div class="bg-white p-6 rounded shadow">
-<h2 class="text-gray-500">Assignments Due</h2>
-<p class="text-3xl font-bold">3</p>
-</div>
-
-<div class="bg-white p-6 rounded shadow">
-<h2 class="text-gray-500">Next Lecture</h2>
-<p class="text-xl font-bold">DBMS - 11 AM</p>
-</div>
-
-</div>
-
-</div>
-
-</body>
-</html>
+{% endblock %}
