@@ -27,6 +27,8 @@ from app.api.v1.routes_results import router as results_router
 from app.api.v1.routes_notices import router as notices_router
 from app.api.v1.routes_timetable import router as timetable_router
 
+from fastapi.staticfiles import StaticFiles
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "app/templates"))
 
@@ -39,6 +41,9 @@ app = FastAPI(
 )
 
 Base.metadata.create_all(bind=engine)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "app/templates")), name="static")
 
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(RateLimitMiddleware, max_requests=200, window_seconds=60)

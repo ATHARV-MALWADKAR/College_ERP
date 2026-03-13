@@ -6,6 +6,8 @@
     <title>College ERP - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/theme.js"></script>
     <style>
         .login-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -90,8 +92,9 @@
     <script>
         // Theme toggle functionality
         function initTheme() {
-            const theme = localStorage.getItem('theme') || 'light';
-            document.documentElement.classList.toggle('dark', theme === 'dark');
+            if (window.themeManager) {
+                window.themeManager.init();
+            }
         }
 
         // Initialize theme on page load
@@ -131,24 +134,44 @@
 
                 if (response.ok) {
                     // Store token
-                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('access_token', data.access_token);
 
-                    // Redirect based on role
-                    const payload = JSON.parse(atob(data.access_token.split('.')[1]));
-                    const role = payload.role;
+                    // Get user info to determine role
+                    const userResponse = await fetch('/api/v1/auth/me', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${data.access_token}`,
+                        }
+                    });
 
-                    let redirectUrl = '/dashboard';
-                    if (role === 'admin') {
-                        redirectUrl = '/admin';
-                    } else if (role === 'faculty') {
-                        redirectUrl = '/faculty';
-                    } else if (role === 'student') {
-                        redirectUrl = '/student';
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        const role = userData.role;
+
+                        let redirectUrl = '/dashboard';
+                        if (role === 'admin') {
+                            redirectUrl = '/admin';
+                        } else if (role === 'faculty') {
+                            redirectUrl = '/faculty';
+                        } else if (role === 'student') {
+                            redirectUrl = '/student';
+                        }
+
+                        window.location.href = redirectUrl;
+                    } else {
+                        throw new Error('Failed to get user information');
                     }
-
-                    window.location.href = redirectUrl;
                 } else {
-                    throw new Error(data.detail || 'Login failed');
+                    // Extract proper error message from API response
+                    let errorMsg = 'Login failed';
+                    if (data.detail) {
+                        errorMsg = data.detail;
+                    } else if (data.message) {
+                        errorMsg = data.message;
+                    } else if (typeof data === 'string') {
+                        errorMsg = data;
+                    }
+                    throw new Error(errorMsg);
                 }
             } catch (error) {
                 errorText.textContent = error.message;

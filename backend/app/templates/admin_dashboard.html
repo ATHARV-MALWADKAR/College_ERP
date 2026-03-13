@@ -39,34 +39,106 @@
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
-  <div class="card rounded-2xl p-6 shadow-soft">
-    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Students</div>
-    <div class="mt-2 text-3xl font-semibold" id="totalStudents">0</div>
-  </div>
-  <div class="card rounded-2xl p-6 shadow-soft">
-    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Faculty</div>
-    <div class="mt-2 text-3xl font-semibold" id="totalFaculty">0</div>
-  </div>
-  <div class="card rounded-2xl p-6 shadow-soft">
-    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Attendance Rate</div>
-    <div class="mt-2 text-3xl font-semibold" id="attendanceRate">0%</div>
-  </div>
-  <div class="card rounded-2xl p-6 shadow-soft">
-    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Assignments Pending</div>
-    <div class="mt-2 text-3xl font-semibold" id="assignmentsPending">0</div>
-  </div>
-</div>
+<div class="space-y-6">
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div class="card rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Students</p>
+          <p class="text-3xl font-bold text-slate-900 dark:text-white" id="totalStudents">0</p>
+        </div>
+        <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+          <i data-lucide="users" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+        </div>
+      </div>
+    </div>
 
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
-  <div class="card rounded-2xl p-6 shadow-soft">
-    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Attendance Rate (Last 7 days)</div>
-    <canvas id="attendanceChart" class="mt-4" height="160"></canvas>
+    <div class="card rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Faculty</p>
+          <p class="text-3xl font-bold text-slate-900 dark:text-white" id="totalFaculty">0</p>
+        </div>
+        <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full">
+          <i data-lucide="user-check" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="card rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Attendance Rate</p>
+          <p class="text-3xl font-bold text-slate-900 dark:text-white" id="attendanceRate">0%</p>
+        </div>
+        <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
+          <i data-lucide="calendar" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="card rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Active Notices</p>
+          <p class="text-3xl font-bold text-slate-900 dark:text-white" id="activeNotices">0</p>
+        </div>
+        <div class="p-3 bg-orange-100 dark:bg-orange-900 rounded-full">
+          <i data-lucide="bell" class="w-6 h-6 text-orange-600 dark:text-orange-400"></i>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="card rounded-2xl p-6 shadow-soft">
-    <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Ungraded Submissions (Last 7 days)</div>
-    <canvas id="pendingChart" class="mt-4" height="160"></canvas>
+  <!-- Charts Section -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div class="card rounded-xl p-6 shadow-lg">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Attendance Trends</h3>
+        <i data-lucide="trending-up" class="w-5 h-5 text-slate-500 dark:text-slate-400"></i>
+      </div>
+      <canvas id="attendanceChart" class="w-full" height="200"></canvas>
+    </div>
+
+    <div class="card rounded-xl p-6 shadow-lg">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">System Overview</h3>
+        <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-500 dark:text-slate-400"></i>
+      </div>
+      <canvas id="overviewChart" class="w-full" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="card rounded-xl p-6 shadow-lg">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Recent Activity</h3>
+      <i data-lucide="activity" class="w-5 h-5 text-slate-500 dark:text-slate-400"></i>
+    </div>
+    <div class="space-y-3" id="recentActivity">
+      <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+        <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-slate-900 dark:text-white">New student registered</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">2 minutes ago</p>
+        </div>
+      </div>
+      <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+        <div class="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-slate-900 dark:text-white">Assignment submitted</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">15 minutes ago</p>
+        </div>
+      </div>
+      <div class="flex items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+        <div class="w-2 h-2 bg-orange-500 rounded-full mr-3"></div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-slate-900 dark:text-white">Notice published</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">1 hour ago</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -81,12 +153,11 @@
       document.getElementById('totalStudents').textContent = data.total_students;
       document.getElementById('totalFaculty').textContent = data.total_faculty;
       document.getElementById('attendanceRate').textContent = `${data.attendance_rate.toFixed(1)}%`;
-      document.getElementById('assignmentsPending').textContent = data.assignments_pending;
+      document.getElementById('activeNotices').textContent = data.active_notices || 0;
 
+      // Attendance Chart
       const attendanceLabels = data.attendance_trend.map(item => item.date);
       const attendanceData = data.attendance_trend.map(item => item.rate);
-      const pendingLabels = data.pending_trend.map(item => item.date);
-      const pendingData = data.pending_trend.map(item => item.pending);
 
       new Chart(document.getElementById('attendanceChart'), {
         type: 'line',
@@ -95,10 +166,13 @@
           datasets: [{
             label: 'Attendance %',
             data: attendanceData,
-            borderColor: '#6366F1',
-            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
             tension: 0.4,
             fill: true,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
           }],
         },
         options: {
@@ -107,33 +181,44 @@
             legend: { display: false },
           },
           scales: {
-            y: { beginAtZero: true, max: 100 },
+            y: {
+              beginAtZero: true,
+              max: 100,
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            }
           },
         },
       });
 
-      new Chart(document.getElementById('pendingChart'), {
-        type: 'bar',
+      // Overview Chart (System metrics)
+      new Chart(document.getElementById('overviewChart'), {
+        type: 'doughnut',
         data: {
-          labels: pendingLabels,
+          labels: ['Students', 'Faculty', 'Active Notices'],
           datasets: [{
-            label: 'Pending Submissions',
-            data: pendingData,
-            backgroundColor: 'rgba(14, 165, 233, 0.8)',
-            borderColor: 'rgba(14, 165, 233, 1)',
-            borderWidth: 1,
+            data: [data.total_students, data.total_faculty, data.active_notices || 0],
+            backgroundColor: [
+              'rgba(59, 130, 246, 0.8)',
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(245, 158, 11, 0.8)',
+            ],
+            borderWidth: 0,
           }],
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { display: false },
-          },
-          scales: {
-            y: { beginAtZero: true },
+            legend: {
+              position: 'bottom',
+              labels: { padding: 20 }
+            },
           },
         },
       });
+
     } catch (error) {
       console.error('Failed to load admin stats:', error);
     }
